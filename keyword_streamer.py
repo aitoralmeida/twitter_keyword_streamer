@@ -32,7 +32,7 @@ class StdOutListener(StreamListener):
         #save the status every 30 mins
         if elapsed_time >= 60 * 30:
             now = datetime.datetime.now()
-            file_name = './corpus_new/tweets-%s-%s-%s-%s-%s.txt.gz' % (now.month, now.day, now.hour, now.minute, now.second)
+            file_name = './tweets/tweets-%s-%s-%s-%s-%s.txt.gz' % (now.month, now.day, now.hour, now.minute, now.second)
             print '(%s-%s %s:%s:%s) %s' % (now.month, now.day, now.hour, now.minute, now.second, 'Saving file')
             
             with gzip.open(file_name, 'w') as f:
@@ -70,6 +70,7 @@ class StdOutListener(StreamListener):
 if __name__ == '__main__':
     now = datetime.datetime.now()
     print '(%s-%s %s:%s:%s) %s' % (now.month, now.day, now.hour, now.minute, now.second, 'Starting') 
+    sys.stdout.flush()
     keywords = json.load(open('keywords.json', 'r'))
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
@@ -77,9 +78,18 @@ if __name__ == '__main__':
     listener = StdOutListener()
     
     stream = Stream(auth, listener)
-    # https://dev.twitter.com/streaming/reference/post/statuses/filter
-    stream.filter(track=keywords)
-    # With stream.filter(follow=IDs) to follow accounts
+    while True:
+        try:
+            # https://dev.twitter.com/streaming/reference/post/statuses/filter
+            stream.filter(track=keywords)
+            # With stream.filter(follow=IDs) to follow accounts
+        except Exception as e:
+            print '(%s-%s %s:%s:%s) %s' % (now.month, now.day, now.hour, now.minute, now.second, "Error streaming") 
+            print '(%s-%s %s:%s:%s) %s' % (now.month, now.day, now.hour, now.minute, now.second, e.message) 
+            sys.stdout.flush()
+            time.sleep(1 * 60)
+            
+        
     
     now = datetime.datetime.now()    
     print '(%s-%s %s:%s:%s) %s' % (now.month, now.day, now.hour, now.minute, now.second, 'Done') 
